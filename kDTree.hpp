@@ -36,13 +36,16 @@ public:
     int nodeCount() const;
     int leafCount() const;
 
+    void mergeSort(const vector<vector<int>> &pointList, int dimension);
+    void merge(vector<vector<int>> &result, vector<int> &leftSide, vector<int> &rightSide, int dimension);
+    kDTreeNode *findPivot(const vector<vector<int>> &pointList);
+
+    kDTreeNode *insertRec(kDTreeNode *root, const vector<int> &point, int depth);
     void insert(const vector<int> &point);
-    kDTreeNode* insertNode(kDTreeNode *node, const vector<int> &point, int depth);
-    kDTreeNode* findMinRec(kDTreeNode* root, int d, int depth);
     void remove(const vector<int> &point);
-    kDTreeNode* removeNode(kDTreeNode *node, const vector<int> &point, int depth);
     bool search(const vector<int> &point);
     void buildTree(const vector<vector<int>> &pointList);
+    void buildTreeRec(const vector<vector<int>> &pointList, int depth);
     void nearestNeighbour(const vector<int> &target, kDTreeNode *best);
     void kNearestNeighbour(const vector<int> &target, int k, vector<kDTreeNode *> &bestList);
 };

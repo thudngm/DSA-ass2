@@ -166,6 +166,58 @@ int kDTree::leafCount() const
   return leafCountRec(root);
 }
 
+void kDTree::mergeSort(const vector<vector<int>> &pointList, int dimension)
+{
+  if (pointList.size() <= 1) {
+    return;
+  }
+
+  int mid = pointList.size() / 2;
+  vector<vector<int>> leftSide = leftSide<pointList.begin(), pointList.begin() + mid>;
+  vector<vector<int>> rightSide = rightSide<pointList.begin() + mid + 1, pointList.end()>;
+
+  mergeSort(leftSide, dimension);
+  mergeSort(rightSide, dimension);
+
+  merge(pointList, leftSide, rightSide, dimension);
+}
+
+void kDTree::merge(vector<vector<int>> &result, vector<int> &leftSide, vector<int> &rightSide, int dimension)
+{
+  int leftIndex = 0, rightIndex = 0, resultIndex = 0;
+
+  while(leftIndex < leftSide.size() && rightIndex < rightSize.size()){
+    if (leftSide[leftIndex][dimension] < rightSide[rightIndex][dimension]){
+      result[resultIndex++] = leftSide[leftIndex++];
+    }
+    else{
+      result[resultIndex++] = rightSide[rightIndex++];
+    }
+  }
+
+  while(leftIndex < leftSide.size()){
+    result[resultIndex++] = leftSide[leftIndex++];
+  }
+
+  while(rightIndex < rightSide.size()){
+    result[resultIndex++] = rightSide[rightIndex++];
+  }
+}
+
+kDTreeNode *kDTree::findPivot(const vector<vector<int>> &pointList)
+{
+  int size = pointList.size();
+  if (size <= 0) return nullptr;
+  int mid;
+  if (size % 2 == 0){
+    mid = size / 2 - 1;
+  }
+  else {
+    mid = size / 2;
+  }
+  return new kDTreeNode(pointList[mid]);
+}
+
 int leafCountRec(kDTreeNode *root)
 {
   if (!root)
@@ -175,145 +227,38 @@ int leafCountRec(kDTreeNode *root)
   return leafCountRec(root->left) + leafCountRec(root->right);
 }
 
+kDTreeNode *kDTree::insertRec(kDTreeNode *root, const vector<int> &point, int depth)
+{
+  if(!this->root){
+    return new kDTreeNode(point);
+  }
+
+  int axis = depth % point.size();
+  if(root->data[axis] > point[axis]){
+    root->left = insertRec(root->left, point, depth + 1);
+  }
+  else{
+    root->right = insertRec(root->right, point, depth + 1);
+  }
+  return root;
+}
+
 void kDTree::insert(const vector<int> &point)
 {
-  if (point.size() != this->k)
-  {
+  if(point.size() != this->k){
     return;
   }
 
-  root = insertNode(root, point, 0);
-}
-
-kDTreeNode *kDTree::insertNode(kDTreeNode *node, const vector<int> &point, int depth)
-{
-  if (!node)
-    return new kDTreeNode(point);
-
-  int cd = depth % this->k;
-  if (point[cd] < (node->data[cd]))
-    node->left = insertNode(node->left, point, depth + 1);
-  else
-    node->right = insertNode(node->right, point, depth + 1);
-
-  return node;
+  root = insertRec(root, point, 0);
 }
 
 void kDTree::remove(const vector<int> &point)
 {
-  if (point.size() != this->k)
-  {
-    return;
-  }
-  root = removeNode(root, point, 0);
-}
-
-bool arePointsSame(const vector<int> &point1, const vector<int> &point2)
-{
-  if (point1.size() != point2.size())
-  {
-    return false;
-  }
-
-  for (int i = 0; i < point1.size(); i++)
-  {
-    if (point1[i] != point2[i])
-    {
-      return false;
-    }
-  }
-  return true;
-}
-
-void copyPoint(vector<int> &point1, const vector<int> &point2)
-{
-  for (int i = 0; i < point1.size(); i++)
-  {
-    point1[i] = point2[i];
-  }
-}
-
-kDTreeNode *minNode(kDTreeNode *x, kDTreeNode *y, kDTreeNode *z, int d)
-{
-  kDTreeNode *res = x;
-  if (y != nullptr && y->data[d] < res->data[d])
-  {
-    res = y;
-  }
-  if (z != nullptr && z->data[d] < res->data[d])
-  {
-    res = z;
-  }
-  return res;
-}
-
-kDTreeNode *kDTree::findMinRec(kDTreeNode *root, int d, int depth)
-{
-  if (!root)
-    return root;
-
-  int cd = depth % this->k;
-
-  if (cd == d)
-  {
-    if (root->left == nullptr)
-    {
-      return root;
-    }
-    return findMinRec(root->left, d, depth + 1);
-  }
-
-  return minNode(root, findMinRec(root->left, d, depth + 1), 
-  findMinRec(root->right, d, depth + 1));
-}
-
-kDTreeNode* findMin(kDTreeNode *root, int d)
-{
-  return findMinRec(root, d, 0);
 }
 
 kDTreeNode *kDTree::removeNode(kDTreeNode *node, const vector<int> &point, int depth)
 {
-  if (!node)
-    return nullptr;
-
-  int cd = depth % this->k;
-
-  // if the point to be delete is present at root
-  if (arePointsSame(node->data, point))
-  {
-    // if right child is not null
-    if (node->right != nullptr)
-    {
-      kDTreeNode *min = findMin(root->right, cd);
-      copyPoint(node->data, min->data);
-      node->right = removeNode(node->right, min->data, depth + 1);
-    }
-    // if left child is not null
-    else if (node->left != nullptr)
-    {
-      kDTreeNode *min = findMin(node->left, cd);
-      copyPoint(node->data, min->data);
-      node->right = removeNode(node->left, min->data, depth + 1);
-    }
-    else
-    {
-      delete node;
-      return NULL;
-    }
-    return node;
-  }
-
-  if (point[cd] < node->data[cd])
-  {
-    node->left = removeNode(node->left, point, depth + 1);
-  }
-  else
-  {
-    node->right = removeNode(node->right, point, depth + 1);
-  }
-
-  return node;
+  
 }
 
 bool kDTree::search(const vector<int> &point)
@@ -323,6 +268,30 @@ bool kDTree::search(const vector<int> &point)
 
 void kDTree::buildTree(const vector<vector<int>> &pointList)
 {
+  if (pointList.empty()){
+    root = nullptr;
+    return;
+  }
+  root = buildTreeRec(pointList, 0);
+}
+
+void kDTree::buildTreeRec(const vector<vector<int>> &pointList, int depth)
+{
+  int k = pointList[0].size();
+  int axis = depth % k;
+
+  mergeSort(pointList, axis);
+  int midIndex = findPivot(pointList);
+
+  insert(pointList[midIndex]);
+  
+  vector<vector<int>> leftList = leftList<pointList.begin(), pointList.begin() + midIndex - 1>;
+  vector<vector<int>> rightList = rightList<pointList.begin() + minIndex + 1, pointList.end()>;
+
+  depth++;
+  int nextAxios = depth % k;
+  buildTreeRec(leftList, depth);
+  buildTreeRec(rightList, depth);
 }
 
 void kDTree::nearestNeighbour(const vector<int> &target, kDTreeNode *best)
