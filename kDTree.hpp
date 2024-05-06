@@ -1,19 +1,13 @@
 #include "main.hpp"
 #include "Dataset.hpp"
-/* TODO: Please design your data structure carefully so that you can work with the given dataset
- *       in this assignment. The below structures are just some suggestions.
- */
+
 struct kDTreeNode
 {
     vector<int> data;
     kDTreeNode *left;
     kDTreeNode *right;
-    kDTreeNode(vector<int> data, kDTreeNode *left = nullptr, kDTreeNode *right = nullptr)
-    {
-        this->data = data;
-        this->left = left;
-        this->right = right;
-    }
+    kDTreeNode(vector<int> data, kDTreeNode *left = nullptr, kDTreeNode *right = nullptr);
+    void printData();
 };
 
 class kDTree
@@ -25,7 +19,7 @@ private:
 public:
     kDTree(int k = 2);
     ~kDTree();
-    int getkD() const;
+
     const kDTree &operator=(const kDTree &other);
     kDTree(const kDTree &other);
 
@@ -37,14 +31,25 @@ public:
     int leafCount() const;
 
     void insert(const vector<int> &point);
-    kDTreeNode* insertNode(kDTreeNode *node, const vector<int> &point, int depth);
-    kDTreeNode* findMinRec(kDTreeNode* root, int d, int depth);
     void remove(const vector<int> &point);
-    kDTreeNode* removeNode(kDTreeNode *node, const vector<int> &point, int depth);
     bool search(const vector<int> &point);
     void buildTree(const vector<vector<int>> &pointList);
     void nearestNeighbour(const vector<int> &target, kDTreeNode *best);
     void kNearestNeighbour(const vector<int> &target, int k, vector<kDTreeNode *> &bestList);
+
+    void printInorder(struct kDTreeNode* node) const;
+    void printPreorder(struct kDTreeNode* node) const;
+    void printPostorder(struct kDTreeNode* node) const;
+    int maxHeight(struct kDTreeNode* node) const;
+    int getNodeCount(struct kDTreeNode* node) const;
+    int getLeafNodeCount(struct kDTreeNode* node) const;
+    struct kDTreeNode* insertRecursive(struct kDTreeNode* node, const vector<int> &point, int depth);
+    struct kDTreeNode* searchRecursive(struct kDTreeNode* node, const vector<int> &point, int depth);
+    struct kDTreeNode* buildTreeRecursive(struct kDTreeNode* node, vector<vector<int>> &pointList, int left, int right, int depth);
+    void clearTree(struct kDTreeNode* node);
+
+    void print2D();
+    void print2DUtil(kDTreeNode* node, int space);
 };
 
 class kNN
