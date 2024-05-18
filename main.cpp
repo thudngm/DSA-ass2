@@ -97,24 +97,46 @@
 //     return 0;
 // }
 
+// int main(int argc, const char *argv[]) {
+//     vector<vector<int>> vec;
+//     string line;
+//     fstream file("test_data.txt", ios::in);
+
+
+//     while(getline(file, line)) {
+//         stringstream ss(line);
+//         vector<int> line_data;
+//         int data;
+
+
+//         while(ss >> data) {
+//             line_data.push_back(data);
+//         }
+//         vec.push_back(line_data);
+//     }
+//     kDTree* myTree = new kDTree();
+//     myTree->buildTree(vec);
+//     myTree->print2D();
+// }
+
 int main(int argc, const char *argv[]) {
-    vector<vector<int>> vec;
-    string line;
-    fstream file("test_data.txt", ios::in);
-
-
-    while(getline(file, line)) {
-        stringstream ss(line);
-        vector<int> line_data;
-        int data;
-
-
-        while(ss >> data) {
-            line_data.push_back(data);
-        }
-        vec.push_back(line_data);
-    }
     kDTree* myTree = new kDTree();
-    myTree->buildTree(vec);
+    myTree->insert(vector<int> {5, 6});
+    myTree->insert(vector<int> {2, 2});
+    myTree->insert(vector<int> {2, 8});
+    myTree->insert(vector<int> {3, 5});
+    myTree->insert(vector<int> {7, 3});
+    myTree->insert(vector<int> {8, 1});
+    myTree->insert(vector<int> {9, 2});
+    // myTree->insert(vector<int> {9, 2});
+    // myTree->insert(vector<int> {9, 4});
     myTree->print2D();
+    cout << "--------------" << endl;
+
+    myTree->remove(vector<int> {5, 6});
+    myTree->print2D();
+    // cout << "----------------" << endl;
+    // kDTreeNode* test = nullptr;
+    // myTree->nearestNeighbour(vector<int> {9, 3}, test);
+    // test->printData();
 }

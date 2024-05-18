@@ -34,7 +34,7 @@ public:
     void remove(const vector<int> &point);
     bool search(const vector<int> &point);
     void buildTree(const vector<vector<int>> &pointList);
-    void nearestNeighbour(const vector<int> &target, kDTreeNode *best);
+    void nearestNeighbour(const vector<int> &target, kDTreeNode *&best);
     void kNearestNeighbour(const vector<int> &target, int k, vector<kDTreeNode *> &bestList);
 
     void printInorder(struct kDTreeNode* node) const;
@@ -43,10 +43,19 @@ public:
     int maxHeight(struct kDTreeNode* node) const;
     int getNodeCount(struct kDTreeNode* node) const;
     int getLeafNodeCount(struct kDTreeNode* node) const;
+
+    void copyTree(kDTreeNode*& dest, const kDTreeNode* src);
     struct kDTreeNode* insertRecursive(struct kDTreeNode* node, const vector<int> &point, int depth);
+    struct kDTreeNode* removeRecursive(struct kDTreeNode* node, const vector<int> &point, int depth);
     struct kDTreeNode* searchRecursive(struct kDTreeNode* node, const vector<int> &point, int depth);
     struct kDTreeNode* buildTreeRecursive(struct kDTreeNode* node, vector<vector<int>> &pointList, int left, int right, int depth);
+    void nearestNeighbourRecursive(struct kDTreeNode* node, const vector<int> &target, kDTreeNode *&best, int depth);
+    struct kDTreeNode* findMinValueNode(struct kDTreeNode* node, int depth, int dimen);
+    struct kDTreeNode* minNode(struct kDTreeNode* node_a, struct kDTreeNode* node_b, int dimen);
     void clearTree(struct kDTreeNode* node);
+
+    void merge(vector<vector<int>>& vec, int left, int mid, int right, int dimen);
+    void mergeSort(vector<vector<int>>& vec, int left, int right, int dimen);
 
     void print2D();
     void print2DUtil(kDTreeNode* node, int space);

@@ -1,58 +1,5 @@
 #include "kDTree.hpp"
 
-
-// Helper functions
-void merge(vector<vector<int>>& vec, int left, int mid, int right, int dimen) {
-    int leftSize = mid - left + 1;
-    int rightSize = right - mid;
-
-    vector<vector<int>> newLeft, newRight;
-    for (int i = 0; i < leftSize; i++) {
-        newLeft.push_back(vec.at(left + i));
-    }
-    for (int j = 0; j < rightSize; j++) {
-        newRight.push_back(vec.at(mid + 1 + j));
-    }
-
-    int i = 0, j = 0, k = left;
-    while (i < leftSize && j < rightSize) {
-        if (newLeft.at(i).at(dimen) <= newRight.at(j).at(dimen)) {
-            vec.at(k) = newLeft.at(i);
-            i++;
-        }
-        else {
-            vec.at(k) = newRight.at(j);
-            j++;
-        }
-        k++;
-    }
-
-    while (i < leftSize) {
-        vec.at(k) = newLeft.at(i);
-        i++;
-        k++;
-    }
-
-    while (j < rightSize) {
-        vec.at(k) = newRight.at(j);
-        j++;
-        k++;
-    }
-};
-
-void mergeSort(vector<vector<int>>& vec, int left, int right, int dimen) {
-    if (dimen == 2)
-        dimen = 0;
-
-    if (left >= right)
-        return;
-
-    int mid = (left + right) / 2;
-    mergeSort(vec, left, mid, dimen);
-    mergeSort(vec, mid + 1, right, dimen);
-    merge(vec, left, mid, right, dimen);
-};
-
 // kDTreeNode
 kDTreeNode::kDTreeNode(vector<int> data, kDTreeNode *left, kDTreeNode *right)
 {
@@ -78,7 +25,27 @@ void kDTreeNode::printData() {
 // kDTree
 kDTree::kDTree(int k) {
     this->k = k;
+    this->root = nullptr;
 };
+
+kDTree::kDTree(const kDTree &other) {
+    this->operator=(other);
+};
+
+const kDTree & kDTree::operator=(const kDTree &other) {
+    this->copyTree(this->root, other.root);
+}
+
+void kDTree::copyTree(kDTreeNode*& dest, const kDTreeNode* src) {
+    if (src == nullptr) {
+        dest = nullptr;
+    }
+    else {
+        this->root = new kDTreeNode(src->data);
+        this->copyTree(dest->left, src->left);
+        this->copyTree(dest->right, src->right);
+    }
+}
 
 
 kDTree::~kDTree() {
@@ -180,24 +147,97 @@ void kDTree::insert(const vector<int> &point) {
     if (point.size() != this->k)
         return;
 
-    this->insertRecursive(this->root, point, 0);
+    this->root = this->insertRecursive(this->root, point, 0);
 };
 
 
 struct kDTreeNode* kDTree::insertRecursive(struct kDTreeNode* node, const vector<int> &point, int depth) {
+    if (depth == this->k)
+        depth = 0;
+
     if (node == nullptr)
         return new kDTreeNode(point);
 
-    if (node->data.at(depth) < point.at(depth)) {
-        node->left = this->insertRecursive(root->left, point, depth + 1);
+    if (point.at(depth) < node->data.at(depth)) {
+        node->left = this->insertRecursive(node->left, point, depth + 1);
     }
     else {
-        node->right = this->insertRecursive(root->right, point, depth + 1);
+        node->right = this->insertRecursive(node->right, point, depth + 1);
     }
 
     return node;
 };
 
+void kDTree::remove(const vector<int> &point) {
+    this->removeRecursive(this->root, point, 0);
+};
+
+struct kDTreeNode* kDTree::removeRecursive(struct kDTreeNode* node, const vector<int> &point, int depth) {
+    if (depth == this->k)
+        depth = 0;
+
+    if (node == nullptr)
+        return node;
+    
+    if (point.at(depth) < node->data.at(depth)) {
+        node->left = this->removeRecursive(node->left, point, depth + 1);
+    }
+    else if (point.at(depth) > node->data.at(depth)) {
+        node->right = this->removeRecursive(node->right, point, depth + 1);
+    }
+
+    if (node->left == nullptr && node->right == nullptr) {
+        delete node;
+        return nullptr;
+    }
+    else if (node->right != nullptr) {
+        struct kDTreeNode* temp = this->findMinValueNode(node->right, depth + 1, depth);
+        node->data = temp->data;
+        node->right = this->removeRecursive(node->right, temp->data, depth + 1);
+        return node;
+    }
+    else {
+        struct kDTreeNode* temp = this->findMinValueNode(node->left, depth + 1, depth);
+        node->data = temp->data;
+        node->right = node->left;
+        node->left = nullptr;
+        node->right = this->removeRecursive(node->right, temp->data, depth + 1);
+        return node;
+    }
+};
+
+struct kDTreeNode* kDTree::findMinValueNode(struct kDTreeNode* node, int depth, int dimen) {
+    if (depth == this->k)
+        depth = 0;
+
+    if (node == nullptr || (node->left == nullptr && node->right == nullptr))
+        return node;
+
+    if (depth == dimen) {
+        if (node->left == nullptr)
+            return node;
+        else
+            return this->findMinValueNode(node->left, depth + 1, dimen);
+    }
+    else {
+        struct kDTreeNode* minLeftNode = this->findMinValueNode(node->left, depth + 1, dimen);
+        struct kDTreeNode* minRightNode = this->findMinValueNode(node->right, depth + 1, dimen);
+        return this->minNode(node, this->minNode(minLeftNode, minRightNode, dimen), dimen);
+    }
+};
+
+struct kDTreeNode* kDTree::minNode(struct kDTreeNode* node_a, struct kDTreeNode* node_b, int dimen) {
+    if (node_a != nullptr && node_b != nullptr) {
+        if (node_a->data.at(dimen) <= node_b->data.at(dimen))
+            return node_a;
+        else
+            return node_b;
+    }
+    else if (node_a == nullptr)
+        return node_b;
+    else
+        return node_a;
+};
 
 void kDTree::buildTree(const vector<vector<int>> &pointList) {
     kDTreeNode* node = this->root;
@@ -213,7 +253,7 @@ struct kDTreeNode* kDTree::buildTreeRecursive(struct kDTreeNode* node, vector<ve
     if (left > right)
         return nullptr;
 
-    mergeSort(pointList, left, right, depth);
+    this->mergeSort(pointList, left, right, depth);
     int mid = (left + right) / 2;
 
     node = new kDTreeNode(pointList.at(mid));
@@ -230,15 +270,14 @@ bool kDTree::search(const vector<int> &point) {
 
 
 struct kDTreeNode* kDTree::searchRecursive(struct kDTreeNode* node, const vector<int> &point, int depth) {
-    if (node == NULL || node->data.at(depth) == point.at(depth))
+    if (node == nullptr || node->data.at(depth) == point.at(depth))
         return node;
 
-    if (node->data.at(depth) > point.at(depth))
+    if (point.at(depth) < node->data.at(depth))
         return this->searchRecursive(node->left, point, depth + 1);
     else
         return this->searchRecursive(node->right, point, depth + 1);
 };
-
 
 void kDTree::clearTree(struct kDTreeNode* node) {
     if (node == nullptr)
@@ -249,32 +288,138 @@ void kDTree::clearTree(struct kDTreeNode* node) {
     delete node;
 };
 
+void kDTree::nearestNeighbour(const vector<int> &target, kDTreeNode *&best) {
+    this->nearestNeighbourRecursive(this->root, target, best, 0);
+};
+
+void kDTree::nearestNeighbourRecursive(struct kDTreeNode* node, const vector<int> &target, kDTreeNode *&best, int depth) {
+    if (depth == this->k)
+        depth = 0;
+
+    if (node == nullptr)
+        return;
+
+    if (
+        (node->left == nullptr && node->right == nullptr) ||
+        (node->data.at(depth) > target.at(depth) && node->left == nullptr) ||
+        (node->data.at(depth) < target.at(depth) && node->right == nullptr)
+    ){
+        if (best == nullptr) {
+            best = node;
+            return;
+        }
+        else {
+            int currentDistance = 0, newDistance = 0;
+            for (int i = 0; i < target.size(); i++) {
+                currentDistance += pow(best->data.at(i) - target.at(i), 2);
+                newDistance += pow(node->data.at(i) - target.at(i), 2);
+            }
+            if (sqrt(newDistance) < sqrt(currentDistance))
+                best = node;
+                return;
+        }
+    }
+
+    if (node->data.at(depth) > target.at(depth))
+        this->nearestNeighbourRecursive(node->left, target, best, depth + 1);
+    else
+        this->nearestNeighbourRecursive(node->right, target, best, depth + 1);
+
+    int R = 0, r = 0;
+    for (int i = 0; i < target.size(); i++) {
+        R += pow(best->data.at(i) - target.at(i), 2);
+    }
+    R = sqrt(R);
+    r = abs(node->data.at(depth) - target.at(depth));
+    if (R >= r) {
+        // Find in opposite branch of node
+        if (node->data.at(depth) > target.at(depth))
+            this->nearestNeighbourRecursive(node->right, target, best, depth + 1);
+        else
+            this->nearestNeighbourRecursive(node->left, target, best, depth + 1);
+    }
+
+};
+
+void kDTree::kNearestNeighbour(const vector<int> &target, int k, vector<kDTreeNode *> &bestList) {
+    for (int i = 0; i < k; i++) {
+        kDTreeNode* best = nullptr;
+        this->nearestNeighbour(target, best);
+        bestList.push_back(best);
+        this->remove(best->data);
+    }
+};
+
+void kDTree::merge(vector<vector<int>>& vec, int left, int mid, int right, int dimen) {
+    int leftSize = mid - left + 1;
+    int rightSize = right - mid;
+
+    vector<vector<int>> newLeft, newRight;
+    for (int i = 0; i < leftSize; i++) {
+        newLeft.push_back(vec.at(left + i));
+    }
+    for (int j = 0; j < rightSize; j++) {
+        newRight.push_back(vec.at(mid + 1 + j));
+    }
+
+    int i = 0, j = 0, k = left;
+    while (i < leftSize && j < rightSize) {
+        if (newLeft.at(i).at(dimen) <= newRight.at(j).at(dimen)) {
+            vec.at(k) = newLeft.at(i);
+            i++;
+        }
+        else {
+            vec.at(k) = newRight.at(j);
+            j++;
+        }
+        k++;
+    }
+
+    while (i < leftSize) {
+        vec.at(k) = newLeft.at(i);
+        i++;
+        k++;
+    }
+
+    while (j < rightSize) {
+        vec.at(k) = newRight.at(j);
+        j++;
+        k++;
+    }
+};
+
+void kDTree::mergeSort(vector<vector<int>>& vec, int left, int right, int dimen) {
+    if (dimen == this->k)
+        dimen = 0;
+
+    if (left >= right)
+        return;
+
+    int mid = (left + right) / 2;
+    mergeSort(vec, left, mid, dimen);
+    mergeSort(vec, mid + 1, right, dimen);
+    merge(vec, left, mid, right, dimen);
+};
+
 // Checking
 void kDTree::print2DUtil(kDTreeNode* node, int space)
 {
-    // Base case
     if (node == NULL)
         return;
  
-    // Increase distance between levels
     space += 10;
  
-    // Process right child first
     this->print2DUtil(node->right, space);
  
-    // Print current node after space
-    // count
     cout << endl;
     for (int i = 10; i < space; i++)
         cout << " ";
     node->printData();
  
-    // Process left child
     print2DUtil(node->left, space);
 }
 
 void kDTree::print2D()
 {
-    // Pass initial space count as 0
     print2DUtil(this->root, 0);
 }
